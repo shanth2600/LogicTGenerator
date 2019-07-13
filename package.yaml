@@ -24,6 +24,8 @@ dependencies:
 
 library:
   source-dirs: src
+  dependencies:
+    - logict >= 0.7.0.1
 
 executables:
   LogicTGenerator-exe:
