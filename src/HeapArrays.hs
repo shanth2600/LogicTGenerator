@@ -1,9 +1,7 @@
 module HeapArrays where
 
 import Lib
-import Control.Applicative
 import Control.Monad.Logic
-import Data.List
 
 
 data Tree a = Node a (Tree a) (Tree a) | Leaf a

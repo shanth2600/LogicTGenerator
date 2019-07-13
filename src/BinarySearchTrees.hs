@@ -1,9 +1,7 @@
 module BinarySearchTrees where
 
 import Lib
-import Control.Applicative
 import Control.Monad.Logic
-import Data.List
 
 
 data Tree = Node Tree Int Tree | Leaf

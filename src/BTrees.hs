@@ -1,7 +1,7 @@
 module BTrees where
 
 import Control.Monad.Logic
-import Control.Applicative
+
 
 data BTree = BTree [Int] [BTree]
 
