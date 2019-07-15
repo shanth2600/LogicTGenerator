@@ -36,16 +36,16 @@ sublistOfSize = undefined
 rootBTreeHeight :: Int -> Logic Int
 rootBTreeHeight size = inInclusiveRange 1 (logInt (size + 1) + 1)
 
--- makeBTree :: Int -> Logic BTree
--- makeBTree size = do
---     height <- rootBTreeHeight size
---     makeRootBTree size 1 size height
+makeBTree :: Int -> Logic BTree
+makeBTree size = do
+    height <- rootBTreeHeight size
+    makeRootBTree size 1 size height
 
--- makeRootBTree :: Int -> Int -> Int -> Int -> Logic BTree
--- makeRootBTree size start end height
---     | height == 1 = do
---         guard (size < 4)
---         keyRangeList <- return $ inInclusiveRange start end
---         x <- sublistOfSize keyRangeList size
---         return $ BTree x []
+makeRootBTree :: Int -> Int -> Int -> Int -> Logic BTree
+makeRootBTree size start end height
+    | height == 1 = do
+        guard (size < 4)
+        keyRangeList <- inInclusiveRange start end
+        x <- sublistOfSize [keyRangeList] size
+        return $ BTree x []
 
