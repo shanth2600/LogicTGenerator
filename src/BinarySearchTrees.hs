@@ -4,7 +4,7 @@ import Lib
 import Control.Monad.Logic
 
 
-data Tree = Node Tree Int Tree | Leaf
+data Tree = Node Tree Int Tree | Leaf deriving Show
 
 makeBSTNodeBound :: Int -> Int -> Int -> Logic Tree
 makeBSTNodeBound size start end

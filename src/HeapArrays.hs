@@ -3,12 +3,7 @@ module HeapArrays where
 import Lib
 import Control.Monad.Logic
 
-
-data Tree a = Node a (Tree a) (Tree a) | Leaf a
 data Heap = HeapLeaf | HeapNode Heap Int Heap deriving Show
-
-makeTree :: Int -> Logic (Tree Int)
-makeTree size = undefined
 
 makeHeap :: Int -> Int -> Int -> Logic Heap
 makeHeap size start end

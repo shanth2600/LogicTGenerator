@@ -3,7 +3,7 @@ module BTrees where
 import Control.Monad.Logic
 
 
-data BTree = BTree [Int] [BTree]
+data BTree = BTree [Int] [BTree] deriving Show
 
 minChildSize :: Int -> Int 
 minChildSize h = 2 * (2 ^ (h-1) - 1)

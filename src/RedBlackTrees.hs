@@ -3,7 +3,7 @@ module RedBlackTrees where
 import Lib
 import Control.Monad.Logic
 
-data RBTree = Leaf | Node RBTree Int RBTree Bool
+data RBTree = Leaf | Node RBTree Int RBTree Bool deriving Show
 
 calcChildColors :: Int -> (Int, Int)
 calcChildColors 0 = (1, 1)
@@ -36,4 +36,8 @@ makeRBTree size start end colorsStart colorsEnd blackHeight
         rangeSize = end - start + 1
 
 -- blackHeightRange :: Int -> Int -> Int
--- blackHeightRange size start end =
+-- blackHeightRange size start = do
+--     guard ((log2Int size) == start)
+--     guard ((log2Int (size + 1)) == temp)
+--     where
+--         temp = log2Int (size + 1)

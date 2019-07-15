@@ -26,6 +26,7 @@ library:
   source-dirs: src
   dependencies:
     - logict >= 0.7.0.1
+    - numeric-prelude >= 0.4.3.1
 
 executables:
   LogicTGenerator-exe:

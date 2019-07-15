@@ -2,6 +2,7 @@ module Lib where
 
 import Control.Monad.Logic
 import Control.Applicative
+import Number.FixedPoint
 
 member :: [a] -> Logic a
 member [] = mzero
@@ -15,3 +16,5 @@ until' start end = member [start..(end - 1)]
 
 downTo :: Int -> Int -> Logic Int
 downTo start end = member [end .. start]
+
+log2Int input = round $ (log input) / (log 2)
