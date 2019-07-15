@@ -25,10 +25,13 @@ getAdditions size amount max = do
     where
         rangeEnd = min amount max
 
--- sublist :: [a] -> [a]
--- sublist [] = []
--- sublist (h:t) = h : sublist t
--- sublist (h:t) = sublist t
+sublist :: Eq a => [a] -> Logic [a]
+sublist [] = return []
+sublist (h:t)
+    | h == (head t) = do
+        rest <- sublist t
+        return $ h : rest
+    | h /= (head t) = sublist t
 
 sublistOfSize :: [Int] -> Int -> Logic [Int]
 sublistOfSize = undefined
