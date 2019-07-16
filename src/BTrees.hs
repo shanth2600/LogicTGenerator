@@ -51,8 +51,8 @@ makeRootBTree :: Int -> Int -> Int -> Int -> Logic BTree
 makeRootBTree size start end height
     | height == 1 = do
         guard (size < 4)
-        keyRangeList <- inInclusiveRange start end
-        x <- sublistOfSize [keyRangeList] size
+        keyRangeList <- return $ inInclusiveRangeList start end
+        x <- sublistOfSize keyRangeList size
         return $ BTree x []
     | height > 1 = do
         x <- inInclusiveRange 2 4
@@ -80,8 +80,8 @@ makeNonRootBTree size start end height
     | height == 1 = do
         guard (size < 4)
         guard (size >= 1)
-        keyRangeList <- inInclusiveRange start end
-        x <- sublistOfSize [keyRangeList] size
+        keyRangeList <- return $ inInclusiveRangeList start end
+        x <- sublistOfSize keyRangeList size
         return $ BTree x []
     | otherwise = do
         guard (height > 0)
@@ -94,7 +94,7 @@ keysHelper childSizes addKeys start =
     init tailResult
     where 
         zipResult = zip childSizes addKeys
-        (x : tailResult) = scanLeft zipResult (start - 1) (\soFar (childSize, add) -> soFar + childSize + add)
+        (_: tailResult) = scanLeft zipResult (start - 1) (\soFar (childSize, add) -> soFar + childSize + add + 1)
 
 childRangesHelper :: Int -> [Int] -> Int -> [(Int,Int)]
 childRangesHelper start keys end =
@@ -105,10 +105,9 @@ childRangesHelper start keys end =
 
 childrenHelper :: [Int] -> [(Int,Int)] -> Int -> Logic [BTree]
 childrenHelper childSizes childRanges hMinusOne = 
-        sequence $ map (\(size , (start, end)) -> makeNonRootBTree size start end hMinusOne) zipResult
+            mapM (\(size , (start, end)) -> makeNonRootBTree size start end hMinusOne) zipResult 
         where
             zipResult = zip childSizes childRanges
-
 
 
 scanLeft :: [a] -> b -> (b -> a -> b) -> [b]

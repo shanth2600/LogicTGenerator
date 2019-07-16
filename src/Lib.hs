@@ -9,7 +9,10 @@ member [] = mzero
 member (a : as) = return a <|> member as
 
 inInclusiveRange :: Int -> Int -> Logic Int
-inInclusiveRange start end = member [start .. end]
+inInclusiveRange start end = member $ inInclusiveRangeList start end
+
+inInclusiveRangeList :: Int -> Int -> [Int]
+inInclusiveRangeList start end = [start .. end]
 
 until' :: Int -> Int -> Logic Int
 until' start end = member [start..(end - 1)]
