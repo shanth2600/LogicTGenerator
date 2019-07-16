@@ -30,10 +30,7 @@ sublist :: [a] -> Logic [a]
 sublist [] = return []
 sublist (h:t) = do
     rest <- sublist t
-    (h:rest) `liftOr` rest
-
-liftOr :: a -> a -> Logic a
-liftOr  a1 a2 = (return a1) `mplus` (return a2)
+    return (h:rest) `mplus` return rest
     
 
 sublistOfSize :: Eq a => [a] -> Int -> Logic [a]
