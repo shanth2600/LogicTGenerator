@@ -57,6 +57,7 @@ makeRootBTree size start end height
     | height > 1 = do
         x <- inInclusiveRange 2 4
         makeBTree x size start end height
+    | otherwise = mzero
 
 makeBTree :: Int -> Int -> Int -> Int -> Int -> Logic BTree
 makeBTree nChildren size start end height = do
@@ -112,4 +113,4 @@ childrenHelper childSizes childRanges hMinusOne =
 
 scanLeft :: [a] -> b -> (b -> a -> b) -> [b]
 scanLeft [] b _ = [b]
-scanLeft (a:as) b r = scanLeft as (r b a) r
+scanLeft (a:as) b r = (b : scanLeft as (r b a) r)
