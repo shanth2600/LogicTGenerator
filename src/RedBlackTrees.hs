@@ -44,3 +44,5 @@ makeRBTreeMeasure size = do
     (start, end) <- return $ blackHeightRange size
     blackHeight <- inInclusiveRange start end
     makeRBTree size 1 size 0 1 blackHeight
+
+rbMain size = countResults (makeRBTreeMeasure size)

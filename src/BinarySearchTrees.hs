@@ -21,3 +21,4 @@ makeBSTNodeBound size start end = do
     right <- return $ makeBSTNodeBound (size - leftSize - 1) (median + 1) end
     Node <$> left <*> return median <*> right
 
+bstMain size = countResults (makeBSTNodeBound size 1 size)

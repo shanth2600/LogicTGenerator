@@ -38,3 +38,5 @@ makeRiff size dataSize jiffLoss avChunks
 runMakeRiff :: Int -> Logic RiffChunk
 runMakeRiff size =
     makeRiff size size ((size + 1) `div` 2) (size `div` 2)
+
+riffMain size = countResults (runMakeRiff size)

@@ -25,3 +25,5 @@ log2Int input = round $ (log (fromIntegral input)) / (log 2)
 
 logInt :: Int -> Int
 logInt input = round $ log (fromIntegral input)
+
+countResults f = runLogic f (\a -> \r  -> 1 + r) 0

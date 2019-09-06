@@ -114,3 +114,5 @@ childrenHelper childSizes childRanges hMinusOne =
 scanLeft :: [a] -> b -> (b -> a -> b) -> [b]
 scanLeft [] b _ = [b]
 scanLeft (a:as) b r = (b : scanLeft as (r b a) r)
+
+bTreeMain size = countResults (bTreeDriver size)

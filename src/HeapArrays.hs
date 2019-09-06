@@ -25,3 +25,5 @@ makeHeap size start end = do
     where
         leftSize = (size - 1) `div` 2
         actualLeftSize = (size - 1) - leftSize
+
+heapMain size = countResults (makeHeap size 0 size)
