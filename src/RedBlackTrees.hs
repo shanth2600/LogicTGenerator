@@ -15,9 +15,8 @@ calcChildBlackHeight _ blackHeight = blackHeight
 
 makeRBTree :: Int -> Int -> Int -> Int -> Int -> Int -> Logic RBTree
 makeRBTree size start end colorsStart colorsEnd blackHeight
-    | rangeSize >= size && rangeSize < 0 = mzero
-    | blackHeight < 0                    = mzero
-    | size == 0 && colorsEnd >= 1        = return Leaf
+    | rangeSize >= size && rangeSize < 0 || blackHeight < 0 = mzero
+    | size == 0 && blackHeight == 1 && colorsEnd >= 1       = return Leaf
     | size > 0 && blackHeight >= 1       = do
         leftSize <- until' 0 size
         rightSize <- return $ size - leftSize - 1
