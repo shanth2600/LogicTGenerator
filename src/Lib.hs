@@ -2,7 +2,6 @@ module Lib where
 
 import Control.Monad.Logic
 import Control.Applicative
-import Number.FixedPoint
 
 member :: [a] -> Logic a
 member [] = mzero
