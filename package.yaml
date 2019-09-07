@@ -32,7 +32,7 @@ library:
 executables:
   LogicTGenerator-exe:
     main:                Main.hs
-    source-dirs:         app
+    source-dirs:         src
     ghc-options:
     - -threaded
     - -rtsopts
