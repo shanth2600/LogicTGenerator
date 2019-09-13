@@ -21,7 +21,7 @@ getAdditions 1 amount max
     | amount > max  = mzero
 getAdditions size amount max = do
     added <- inInclusiveRange 0 rangeEnd
-    rest <- getAdditions (size -1) (amount - added) max
+    rest <- getAdditions (size - 1) (amount - added) max
     return $ added : rest
     where
         rangeEnd = min amount max
@@ -85,9 +85,9 @@ makeNonRootBTree size start end height
         x <- sublistOfSize keyRangeList size
         return $ BTree x []
     | otherwise = do
-        guard (height > 0)
+        guard (height > 1)
         guard (size > 0)
-        x <- inInclusiveRange start end
+        x <- inInclusiveRange 2 4
         makeBTree x size start end height
 
 keysHelper :: [Int] -> [Int] -> Int -> [Int]
