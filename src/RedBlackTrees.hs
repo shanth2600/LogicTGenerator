@@ -28,15 +28,13 @@ makeRBTree size start end colorsStart colorsEnd blackHeight
         childBlackHeight <- return $ calcChildBlackHeight myColor blackHeight
         left <- makeRBTree leftSize start (median - 1) childColorStart childColorEnd childBlackHeight
         right <- makeRBTree rightSize (median + 1) end childColorStart childColorEnd childBlackHeight
-        case myColor == 1 of
-            True -> return $ Node left median right True
-            False -> return $ Node left median right False
+        return $ Node left median right (myColor == 1)
     | otherwise                          = mzero 
     where 
         rangeSize = end - start + 1
 
 blackHeightRange :: Int -> (Int, Int)
-blackHeightRange size = ((log2Int size), (log2Int (size + 1)))
+blackHeightRange size = ((log2Int size), (log2Int (size + 1)) + 1)
 
 makeRBTreeMeasure :: Int -> Logic RBTree
 makeRBTreeMeasure size = do
