@@ -5,11 +5,13 @@ import BinarySearchTrees
 import RedBlackTrees
 import HeapArrays
 import BTrees
+import RiffImages
 
 getModule "bst" = BinarySearchTrees.bstMain
 getModule "rbt" = RedBlackTrees.rbMain
 getModule "heap" = HeapArrays.heapMain
 getModule "bt" = BTrees.bTreeMain
+getModule "riff" = RiffImages.riffMain
 
 main :: IO ()
 main = do
