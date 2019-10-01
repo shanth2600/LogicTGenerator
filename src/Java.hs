@@ -9,7 +9,7 @@ data Variable = Variable String deriving Show
 data MethodName = MethodName String deriving Show
 data ClassName = ClassName String deriving (Show, Eq, Ord)
 
-data Type = IntType | BooleanType | DoubleType | ClassType ClassName deriving Show
+data Type = IntType | BooleanType | DoubleType | ClassType ClassName deriving (Show, Eq)
 
 data Call = Call Expression MethodName [Expression] deriving Show
 
@@ -73,26 +73,31 @@ toHierarchy :: Spec -> M.Map ClassName [ClassName]
 toHierarchy spec = M.fromList $ map (\(ClassSpec name extendsImp _ _) -> (name, extendsImp)) spec
 
 allParents :: Spec -> ClassName -> Logic ClassName
-allParents spec of' = case M.lookup of' hierarchy of
-    (Just directParents) -> member directParents
+allParents spec of' = 
+    case M.lookup of' hierarchy of
+    (Just directParents) -> do
+        allParents' <- member $ map (allParents spec) directParents -- double check
+        (member directParents) `mplus` allParents'
     Nothing              -> mzero
     where 
         hierarchy = toHierarchy spec
+        parents   = map (\(ClassSpec _ parents _ _) -> parents) spec
 
 parentChild :: Spec -> ClassName -> ClassName -> Bool
 parentChild spec parent child = case M.lookup child hierarchy of
     (Just directParents) -> if elem parent directParents
         then True
-        else undefined -- also something here
+        else any (\directParent -> parentChild spec parent directParent) directParents
     Nothing              -> False
     where 
         hierarchy = toHierarchy spec
 
 typesCompatibleParenChild :: Spec -> Type -> Type -> Bool
-typesCompatibleParenChild spec parent child = case (parent, child) of
-    (_,_)                                       -> True -- somethings wrong here
-    (ClassType parentName, ClassType childName) -> parentChild spec parentName childName
-    otherwise                                   -> False
+typesCompatibleParenChild spec parent child
+    |   parent == child = True
+    |   otherwise = case (parent, child) of
+            (ClassType parentName, ClassType childName) -> parentChild spec parentName childName
+            otherwise                                   -> False
 
 makeExpressionsOfTypes :: Spec -> Int -> Env -> [Type] -> Logic [Expression]
 makeExpressionsOfTypes spec size env types = case types of
@@ -109,20 +114,26 @@ makeExpressionsOfTypes spec size env types = case types of
 makeExpression :: Spec -> Int -> Env -> Logic (Expression, Type)
 makeExpression spec size env
     | (size <= 0) = member baseCases
-    | otherwise   = do
-        (ClassSpec className _ constructors _) <- member spec
-        (ConstructorSpec paramTypes) <- member constructors
-        params <- makeExpressionsOfTypes spec (size - 1) env paramTypes
-        return (NewExpression className params, ClassType className)
+    | otherwise   = (member baseCases) `mplus` (makeExpressionNew spec size env) `mplus` (makeExpressionCall spec size env )
     where baseCases = [(IntLiteral 0, IntType),
             (BooleanLiteral False, BooleanType),
             (StringLiteral "foo", ClassType (ClassName "String"))] ++
             map (\(l, r) -> ((VariableExpression l), r)) (M.toList env)
 
+makeExpressionNew spec size env = do
+    (ClassSpec className _ constructors _) <- member spec
+    (ConstructorSpec paramTypes) <- member constructors
+    params <- makeExpressionsOfTypes spec (size - 1) env paramTypes
+    return (NewExpression className params, ClassType className)
+
+makeExpressionCall spec size env = do
+    (call, (Just returnType)) <- makeCall spec (size - 1) env False
+    return $ (CallExpression call, returnType)
+
 makeCall :: Spec -> Int -> Env -> Bool -> Logic (Call, Maybe Type)
 makeCall spec size env voidOk = do
     (base, ClassType(myClassName)) <- makeExpression spec size env
-    methodClassName <- (return myClassName) `interleave` (allParents spec myClassName)
+    methodClassName <- (return myClassName) `mplus` (allParents spec myClassName)
     (ClassSpec _ _ _ methods) <- return $ head $ filter (\(ClassSpec name _ _ _) -> name == methodClassName) spec
     (MethodSpec methodName paramTypes returnType) <- member methods
     if True
@@ -132,15 +143,21 @@ makeCall spec size env voidOk = do
         else mzero
 
 makeStatement :: Spec -> Int -> Env -> Int -> Logic (Statement, Env)
-makeStatement spec size env statementNum = do
+makeStatement spec size env statementNum = 
+    variableDeclaration `mplus` makeStatement
+    where
+        variableDeclaration = makeStatementVariableDeclaration spec size env statementNum
+        makeStatement = makeStatementVariableCallStatement spec size env statementNum
+
+makeStatementVariableDeclaration spec size env statementNum = do
     (initializer, initializerType) <- makeExpression spec size env
     variable <- return $ Variable ("x" ++ (show statementNum))
-    variableDeclarationTuple <- return $ ((VariableDeclaration initializerType variable initializer), env)
-    (call, _) <- makeCall spec size env True
-    callStatementTuple <- return $ (CallStatement call, env)
-    member [variableDeclarationTuple, callStatementTuple]
-    
+    return $ ((VariableDeclaration initializerType variable initializer), env)
 
+makeStatementVariableCallStatement spec size env statementNum = do  
+    (call, _) <- makeCall spec size env True
+    return $ (CallStatement call, env)
+    
 makeStatements :: Spec ->  Int -> Env -> Int -> Logic [Statement]
 makeStatements spec size env statementNum
     | (statementNum < 0) = mzero
@@ -149,7 +166,7 @@ makeStatements spec size env statementNum
         guard (statementNum > 0)
         (statement, newEnv) <- makeStatement spec size env statementNum
         rest <- makeStatements spec size newEnv (statementNum - 1)
-        return $ [statement] ++ rest
+        return $ statement:rest
 
 makeTest :: Spec -> Int -> Logic JavaTest
 makeTest spec size = do
