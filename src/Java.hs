@@ -5,7 +5,7 @@ import Data.List
 import Control.Monad.Logic
 import qualified Data.Map.Strict as M
 
-data Variable = Variable String deriving Show
+data Variable = Variable String deriving (Show, Eq, Ord)
 data MethodName = MethodName String deriving Show
 data ClassName = ClassName String deriving (Show, Eq, Ord)
 
@@ -59,15 +59,13 @@ default_spec = [
         [(MethodSpec (MethodName "concat")) [ClassType (ClassName "String")] (Just (ClassType (ClassName "String")))],
     ClassSpec (
         ClassName "java.util.ArrayList") 
-        [(ClassName "Object")] [ConstructorSpec []] 
+        [(ClassName "Object")] [ConstructorSpec [], ConstructorSpec [IntType]] 
         [
             (MethodSpec (MethodName "size") [] (Just IntType)),
             (MethodSpec (MethodName "add") [ClassType (ClassName "Object")] (Just BooleanType)),
             (MethodSpec (MethodName "remove") [ClassType (ClassName "Object")] (Just BooleanType))]]
 
-
 javaMain bound = countResults (makeTest default_spec bound)
-
 
 toHierarchy :: Spec -> M.Map ClassName [ClassName]
 toHierarchy spec = M.fromList $ map (\(ClassSpec name extendsImp _ _) -> (name, extendsImp)) spec
@@ -76,8 +74,7 @@ allParents :: Spec -> ClassName -> Logic ClassName
 allParents spec of' = 
     case M.lookup of' hierarchy of
     (Just directParents) -> do
-        allParents' <- member $ map (allParents spec) directParents -- double check
-        (member directParents) `mplus` allParents'
+        (member directParents) `mplus` (join (member $ map (allParents spec) directParents))
     Nothing              -> mzero
     where 
         hierarchy = toHierarchy spec
@@ -88,12 +85,12 @@ parentChild spec parent child = case M.lookup child hierarchy of
     (Just directParents) -> if elem parent directParents
         then True
         else any (\directParent -> parentChild spec parent directParent) directParents
-    Nothing              -> False
+    Nothing                     -> False
     where 
         hierarchy = toHierarchy spec
 
-typesCompatibleParenChild :: Spec -> Type -> Type -> Bool
-typesCompatibleParenChild spec parent child
+typesCompatibleParentChild :: Spec -> Type -> Type -> Bool
+typesCompatibleParentChild spec parent child
     |   parent == child = True
     |   otherwise = case (parent, child) of
             (ClassType parentName, ClassType childName) -> parentChild spec parentName childName
@@ -104,21 +101,22 @@ makeExpressionsOfTypes spec size env types = case types of
     [] -> return []
     (head:tail) -> do
         (expression, expressionType) <- makeExpression spec size env
-        if typesCompatibleParenChild spec head expressionType
+        if typesCompatibleParentChild spec head expressionType
             then do
                 rest <- makeExpressionsOfTypes spec size env tail
-                return $ [expression] ++ rest
+                return $ expression : rest
             else mzero
-
 
 makeExpression :: Spec -> Int -> Env -> Logic (Expression, Type)
 makeExpression spec size env
-    | (size <= 0) = member baseCases
-    | otherwise   = (member baseCases) `mplus` (makeExpressionNew spec size env) `mplus` (makeExpressionCall spec size env )
-    where baseCases = [(IntLiteral 0, IntType),
+    | (size <= 0) = baseCases
+    | otherwise   = baseCases `mplus` (makeExpressionNew spec size env) `mplus` (makeExpressionCall spec size env)
+    where 
+        baseCases = member $ [(IntLiteral 0, IntType),
             (BooleanLiteral False, BooleanType),
-            (StringLiteral "foo", ClassType (ClassName "String"))] ++
-            map (\(l, r) -> ((VariableExpression l), r)) (M.toList env)
+            (DoubleLiteral 0, DoubleType),
+            (StringLiteral "foo", ClassType (ClassName "String"))] ++ rest
+        rest = map (\(l, r) -> ((VariableExpression l), r)) (M.toList env)
 
 makeExpressionNew spec size env = do
     (ClassSpec className _ constructors _) <- member spec
@@ -136,29 +134,34 @@ makeCall spec size env voidOk = do
     methodClassName <- (return myClassName) `mplus` (allParents spec myClassName)
     (ClassSpec _ _ _ methods) <- return $ head $ filter (\(ClassSpec name _ _ _) -> name == methodClassName) spec
     (MethodSpec methodName paramTypes returnType) <- member methods
-    if True
-        then do
-            params <- makeExpressionsOfTypes spec size env paramTypes
-            return $ (Call base methodName params, returnType)
-        else mzero
+    params <- makeExpressionsOfTypes spec size env paramTypes
+    guard (isDefined returnType || voidOk)
+    return $ (Call base methodName params, returnType)
+         
+
+isDefined :: Maybe a -> Bool
+isDefined (Just a) = True
+isDefined Nothing  = False
+
 
 makeStatement :: Spec -> Int -> Env -> Int -> Logic (Statement, Env)
 makeStatement spec size env statementNum = 
     variableDeclaration `mplus` makeStatement
     where
-        variableDeclaration = makeStatementVariableDeclaration spec size env statementNum
         makeStatement = makeStatementVariableCallStatement spec size env statementNum
+        variableDeclaration = makeStatementVariableDeclaration spec size env statementNum
 
 makeStatementVariableDeclaration spec size env statementNum = do
     (initializer, initializerType) <- makeExpression spec size env
     variable <- return $ Variable ("x" ++ (show statementNum))
-    return $ ((VariableDeclaration initializerType variable initializer), env)
+    newEnv <- return $ M.insert variable initializerType env
+    return $ ((VariableDeclaration initializerType variable initializer), newEnv)
 
 makeStatementVariableCallStatement spec size env statementNum = do  
     (call, _) <- makeCall spec size env True
     return $ (CallStatement call, env)
     
-makeStatements :: Spec ->  Int -> Env -> Int -> Logic [Statement]
+makeStatements :: Spec -> Int -> Env -> Int -> Logic [Statement]
 makeStatements spec size env statementNum
     | (statementNum < 0) = mzero
     | statementNum == 0  = return []
@@ -166,7 +169,7 @@ makeStatements spec size env statementNum
         guard (statementNum > 0)
         (statement, newEnv) <- makeStatement spec size env statementNum
         rest <- makeStatements spec size newEnv (statementNum - 1)
-        return $ statement:rest
+        return $ statement : rest
 
 makeTest :: Spec -> Int -> Logic JavaTest
 makeTest spec size = do
